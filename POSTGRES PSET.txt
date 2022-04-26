@@ -1,0 +1,238 @@
+----CRIAÇÃO DO BANCO DE DADOS UVV
+
+CREATE DATABASE "UVV"
+    WITH 
+    OWNER = postgres
+    ENCODING = 'UTF8'
+    LC_COLLATE = 'Portuguese_Brazil.1252'
+    LC_CTYPE = 'Portuguese_Brazil.1252'
+    TABLESPACE = pg_default
+    CONNECTION LIMIT = -1;
+
+-------CRIAÇAO DO SCHEMA ELMASIR
+CREATE SCHEMA IF NOT EXISTS elmasir
+    AUTHORIZATION postgres;
+
+-------- CRIAÇÃO DA TABELA DEPARTAMENTOS E ADIÇAO DE CHAVES PK E FK
+
+CREATE TABLE IF NOT EXISTS elmasir.departamento
+(
+    numero_departamento integer NOT NULL,
+    nome_departamento character varying(15) COLLATE pg_catalog."default" NOT NULL,
+    cpf_gerente character(11) COLLATE pg_catalog."default" NOT NULL,
+    data_inicio_gerente date,
+    CONSTRAINT departamento_pk PRIMARY KEY (numero_departamento)
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS elmasir.departamento
+    OWNER to postgres;
+-- Index: departamento_idx
+
+-- DROP INDEX IF EXISTS elmasir.departamento_idx;
+
+CREATE UNIQUE INDEX IF NOT EXISTS departamento_idx
+    ON elmasir.departamento USING btree
+    (numero_departamento ASC NULLS LAST)
+    TABLESPACE pg_default;
+-- Index: departamento_idx1
+
+-- DROP INDEX IF EXISTS elmasir.departamento_idx1;
+
+CREATE UNIQUE INDEX IF NOT EXISTS departamento_idx1
+    ON elmasir.departamento USING btree
+    (numero_departamento DESC NULLS FIRST)
+    TABLESPACE pg_default;
+-- Index: departamento_idx2
+
+-- DROP INDEX IF EXISTS elmasir.departamento_idx2;
+
+CREATE UNIQUE INDEX IF NOT EXISTS departamento_idx2
+    ON elmasir.departamento USING btree
+    (nome_departamento COLLATE pg_catalog."default" ASC NULLS LAST)
+    TABLESPACE pg_default;
+
+
+--------------CRIACAO DA TABELA DEPENDENTES E PK,FK
+
+
+CREATE TABLE IF NOT EXISTS elmasir.dependente_
+(
+    cpf_funcionario character(11) COLLATE pg_catalog."default" NOT NULL,
+    nome_dependente character varying(15) COLLATE pg_catalog."default" NOT NULL,
+    sexo character(1) COLLATE pg_catalog."default",
+    data_nascimento date,
+    parentesco character varying(15) COLLATE pg_catalog."default",
+    CONSTRAINT dependente_pk PRIMARY KEY (cpf_funcionario, nome_dependente),
+    CONSTRAINT funcionario_dependente__fk FOREIGN KEY (cpf_funcionario)
+        REFERENCES elmasir.funcionario (cpf) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS elmasir.dependente_
+    OWNER to postgres;
+
+---------------CRIACAO DA TABELA FUNCIONARIOS E SUAS PK E FKS
+
+CREATE TABLE IF NOT EXISTS elmasir.funcionario
+(
+    cpf character(11) COLLATE pg_catalog."default" NOT NULL,
+    primeiro_nome character varying(15) COLLATE pg_catalog."default" NOT NULL,
+    nome_meio character(1) COLLATE pg_catalog."default",
+    ultimo_nome character varying(15) COLLATE pg_catalog."default" NOT NULL,
+    data_nascimento date,
+    endereco character varying(30) COLLATE pg_catalog."default",
+    sexo character(1) COLLATE pg_catalog."default",
+    salario numeric(10,2),
+    cpf_supervisor character(11) COLLATE pg_catalog."default" NOT NULL,
+    numero_departamento integer NOT NULL,
+    CONSTRAINT funcionario_pk PRIMARY KEY (cpf)
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS elmasir.funcionario
+    OWNER to postgres;
+
+-------------- CRIACAO DA TABELA LOCALIZACOES DE DEPARTAMENTO E PK E FKS
+
+CREATE TABLE IF NOT EXISTS elmasir.localizacoes_departamento
+(
+    numero_departamento_ integer NOT NULL,
+    local character varying(15) COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT localizacoes_departamento_pk PRIMARY KEY (numero_departamento_, local),
+    CONSTRAINT departamento_localizacoes_departamento_fk FOREIGN KEY (numero_departamento_)
+        REFERENCES elmasir.departamento (numero_departamento) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS elmasir.localizacoes_departamento
+    OWNER to postgres;
+
+------------------CRIACAO DA TABELA PROJETO PK E FKS
+CREATE TABLE IF NOT EXISTS elmasir.projeto
+(
+    numero_projeto integer NOT NULL,
+    nome_projeto character varying(15) COLLATE pg_catalog."default" NOT NULL,
+    local_projeto character varying(15) COLLATE pg_catalog."default",
+    numero_departamento integer NOT NULL,
+    CONSTRAINT projeto_pk PRIMARY KEY (numero_projeto),
+    CONSTRAINT departamento_projeto_fk FOREIGN KEY (numero_departamento)
+        REFERENCES elmasir.departamento (numero_departamento) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS elmasir.projeto
+    OWNER to postgres;
+-- Index: projeto_idx
+
+-- DROP INDEX IF EXISTS elmasir.projeto_idx;
+
+CREATE UNIQUE INDEX IF NOT EXISTS projeto_idx
+    ON elmasir.projeto USING btree
+    (nome_projeto COLLATE pg_catalog."default" ASC NULLS LAST)
+    TABLESPACE pg_default;
+
+----------------- CRIACAO DA TABELA TRABALHA_EM PK E FKS
+
+CREATE TABLE IF NOT EXISTS elmasir.trabalha_em
+(
+    cpf_funcionario_ character(11) COLLATE pg_catalog."default" NOT NULL,
+    numero_projeto integer NOT NULL,
+    horas numeric(3,1)
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS elmasir.trabalha_em
+    OWNER to postgres;
+
+--------------------- INSERINDO OS VALORES DE DEPARTAMENTOS
+
+INSERT INTO elmasir.departamento(
+	numero_departamento, nome_departamento, cpf_gerente, data_inicio_gerente)
+	VALUES (1,"matriz","88866555576","1981-06-19"),(4,"administracao","98765432168","1995-01-01"), (5,"pesquisa","33344555587","1988-05-22");
+
+
+
+--------------------- INSERINDO OS VALORES DE DEPENDENTES
+
+INSERT INTO elmasir.dependente_(
+	cpf_funcionario, nome_dependente, sexo, data_nascimento, parentesco)
+	VALUES ("12345678966","Alicia","F","1988-12-30","Filha"),
+("12345678966","Elizabeth","F","1967-05-05","Esposa"),
+("12345678966","Michael","M","1988-01-04","Filho"),
+("33344555587","Alicia","F","1986-04-05","Filha"),
+("33344555587","Janaína","F","1958-05-03","Esposa"),
+("33344555587","Tiago","M","1983-10-25","Filho"),
+("98765432168","Antonio","M","1942-02-28","Marido");
+
+--------------------- INSERINDO OS VALORES DE FUNCIONARIOS
+INSERT INTO elmasir.funcionario(
+	cpf, primeiro_nome, nome_meio, ultimo_nome, data_nascimento, endereco, sexo, salario, cpf_supervisor, numero_departamento)
+	VALUES ("12345678966","joão","B","Silva","1965-01-09","Rua das Flores, 751, São Paulo","M",30.0,"33344555587",5),
+("33344555587","Fernando","T","Wong","1995-12-08","Rua da Lapa, 34, São Paulo, SP","M",40.0,"88866555576",5),
+("45345345376","Joice","A","Leite","1972-07-31","AV.Lucas Obes,74 , São Paulo","F",25.0,"33344555587",5),
+("66688444476","Ronaldo","K","Lima","1962-09-15","Rua Rebouças, 65, Piracicaba","M",38.0,"33344555587",5),
+("98765432168","Jennifer","S","Souza","1941-06-20","AV.Arthur de lima,54 SP","F",43.0,"8866555576 ",4),
+("98798798733","André","V","Pereira","1969-03-29","Rua Timbira,35 , São Paulo, SP","M",25.0,"98765432168",4),
+("99988777767","Alice","J","Zelaya","1968-01-19","Rua Souza Lima, 35 Curitiba","F",25.0,"98765432168",4);
+
+
+--------------------- INSERINDO OS VALORES DE LOCALIZACOES_DEPARTAMENTO
+
+INSERT INTO elmasir.localizacoes_departamento(
+	numero_departamento_, local)
+	VALUES (1,"São Paulo"),
+(4,"Mauá"),
+(5,"Itu"),
+(5,"Santo André"),
+(5,"São Paulo");
+
+
+--------------------- INSERINDO OS VALORES DE PROJETO
+
+INSERT INTO elmasir.projeto(
+	numero_projeto, nome_projeto, local_projeto, numero_departamento)
+	VALUES (1,"ProdutoX","Santo André",5),
+(2,"ProdutoY","Itu",5),
+(3,"ProdutoZ","São Paulo",5),
+(10,"Informatização","Mauá",4),
+(20,"Reorganização","São Paulo",1),
+(30,"Novosbenefícios","Mauá",4);
+
+
+--------------------- INSERINDO OS VALORES DE TRABALHA_EM
+
+INSERT INTO elmasir.trabalha_em(
+	cpf_funcionario_, numero_projeto, horas)
+	VALUES ("12345678966",1,32.5),
+("12345678966",2,7.5),
+("66688444476",3,40.0),
+("45345345376",1,20.0),
+("45345345376",2,20.0),
+("33344555587",2,10.0),
+("33344555587",3,10.0),
+("33344555587",10,10.0),
+("33344555587",20,10.0),
+("99988777767",30,30.0),
+("99988777767",10,10.0),
+("98798798733",10,35.0),
+("98798798733",30,5.0),
+("98798798733",30,20.0),
+("98798798733",20,15.0),
+("88866555576",20,NULL);
+
+
+
+
